@@ -1,6 +1,7 @@
 variable "kubeconfig_file" {
   description = "Path to kubeconfig file for accessing the Kubernetes cluster"
   type        = string
+  default     = "~/.kube/config"
 }
 
 variable "argocd_namespace" {
