@@ -44,3 +44,9 @@ variable "bootstrap_app_source_repo" {
     password = null
   }
 }
+
+variable "expose_web_ui" {
+  description = "Toggle to expose Argo CD web UI with Kubernetes Loadbalancer service"
+  type        = bool
+  default     = false
+}

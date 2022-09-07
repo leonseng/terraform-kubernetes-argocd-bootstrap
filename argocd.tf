@@ -27,6 +27,7 @@ resource "kubectl_manifest" "argocd" {
 # Expose argo CD web UI on public Load balancer
 ############################################################################
 resource "kubernetes_service" "argocd_server_lb" {
+  count      = var.expose_web_ui ? 1 : 0
   depends_on = [kubectl_manifest.argocd]
 
   metadata {
@@ -49,7 +50,8 @@ resource "kubernetes_service" "argocd_server_lb" {
 
 # Get Argo CD web UI IP/URL
 data "kubernetes_service" "argocd_server_lb" {
-  depends_on = [kubernetes_service.argocd_server_lb]
+  count      = var.expose_web_ui ? 1 : 0
+  depends_on = [kubernetes_service.argocd_server_lb[0]]
 
   metadata {
     name      = "argocd-server-lb"
@@ -73,7 +75,7 @@ data "kubernetes_secret" "argocd_server_password" {
 # Without this, the deletion of Application CRs will be stuck if the Application CRD is deleted before the CRs are cleaned up,
 # as the status of the CRs cannot be queried without the CRD
 resource "null_resource" "argocd_app_cleanup" {
-  depends_on = [kubernetes_service.argocd_server_lb]
+  depends_on = [kubernetes_service.argocd_server_lb[0]]
   triggers = {
     kubeconfig_file  = var.kubeconfig_file
     argocd_namespace = var.argocd_namespace
@@ -118,8 +120,11 @@ resource "kubernetes_secret" "private_repo_auth" {
 # need to use kubectl_manifest here because kubernetes_manifest does not support defining CRD and CR in the same TF state
 # https://github.com/hashicorp/terraform-provider-kubernetes/issues/1367
 resource "kubectl_manifest" "bootstrap_app" {
-  depends_on = [null_resource.argocd_app_cleanup]
-  wait       = true
+  depends_on = [
+    kubectl_manifest.argocd,
+    null_resource.argocd_app_cleanup
+  ]
+  wait = true
   yaml_body = templatefile(
     abspath("${path.module}/files/bootstrap-app.yaml.tpl"),
     {

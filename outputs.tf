@@ -1,6 +1,6 @@
 output "argocd_server_url" {
   description = "URL to access Argo CD server web UI"
-  value       = "https://${data.kubernetes_service.argocd_server_lb.status[0].load_balancer[0].ingress[0].hostname}"
+  value       = var.expose_web_ui ? "https://${data.kubernetes_service.argocd_server_lb[0].status[0].load_balancer[0].ingress[0].hostname}" : null
 }
 
 output "argocd_server_admin_password" {
